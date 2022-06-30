@@ -1,0 +1,53 @@
+dataset:
+  image_size: 256
+  train:
+    root: "coco\\images\\train2014"
+    ann_file: "coco\\annotations\\captions_train2014.json"
+  val:
+    root: "coco\\images\\val2014"
+    ann_file: "coco\\annotations\\captions_val2014.json"
+train:
+  epochs: 25
+  batch_size: 64
+  base_unet_max_batch_size: 32
+  sr_unet256_max_batch_size: 8
+  checkpoint_rate: 300
+  checkpoint_path: "./checkpoint/checkpoint.pt"
+  use_ema: True
+  lr: 0.0001
+  eps: 0.00000001
+  beta1: 0.9
+  beta2: 0.99
+  max_grad_norm: None
+  amp: True
+  group_wd_params: True
+  warmup_steps: None
+  cosine_decay_max_steps: None
+  cond_scale: 3
+model:
+  text_encoder_name: "t5-large"
+  image_sizes: [64, 256]
+  cond_drop_prob: 0.1
+  timesteps: 1000
+  base_unet:
+    dim: 128
+    cond_dim: 512
+    dim_mults: [1, 2, 3, 4]
+    num_resnet_blocks: 3
+    layer_attns: [False, True, True, True]
+    layer_cross_attns: [False, True, True, True]
+    attn_heads: 8
+    ff_mult: 2
+    memory_efficient: False
+    dropout: 0.2
+  sr_unet256:
+    dim: 64
+    cond_dim: 512
+    dim_mults: [1, 2, 4, 8]
+    num_resnet_blocks: [2, 4, 8, 8]
+    layer_attns: [False, False, False, True]
+    layer_cross_attns: [False, False, False, True]
+    attn_heads: 8
+    ff_mult: 2
+    memory_efficient: True
+    dropout: 0.2

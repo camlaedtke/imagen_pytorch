@@ -10,11 +10,11 @@ train:
   epochs: 25
   batch_size: 64
   base_unet_max_batch_size: 32
-  sr_unet256_max_batch_size: 8
+  sr_unet1_max_batch_size: 32
   checkpoint_rate: 300
-  checkpoint_path: "./checkpoint/checkpoint.pt"
+  checkpoint_path: "./checkpoint/imagen_medium_checkpoint.pt"
   use_ema: True
-  lr: 0.0001
+  lr: [0.000025, 0.000025]
   eps: 0.00000001
   beta1: 0.9
   beta2: 0.99
@@ -23,7 +23,7 @@ train:
   group_wd_params: True
   warmup_steps: None
   cosine_decay_max_steps: None
-  cond_scale: 3
+  cond_scale: 5
 model:
   text_encoder_name: "t5-large"
   image_sizes: [64, 256]
@@ -40,7 +40,7 @@ model:
     ff_mult: 2
     memory_efficient: False
     dropout: 0.2
-  sr_unet256:
+  sr_unet1:
     dim: 64
     cond_dim: 512
     dim_mults: [1, 2, 4, 8]

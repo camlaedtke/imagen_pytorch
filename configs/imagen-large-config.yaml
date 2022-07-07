@@ -1,5 +1,5 @@
 dataset:
-  image_size: 256
+  image_size: 128
   train:
     root: "coco\\images\\train2014"
     ann_file: "coco\\annotations\\captions_train2014.json"
@@ -7,14 +7,14 @@ dataset:
     root: "coco\\images\\val2014"
     ann_file: "coco\\annotations\\captions_val2014.json"
 train:
-  epochs: 25
+  epochs: 40
   batch_size: 64
   base_unet_max_batch_size: 32
-  sr_unet256_max_batch_size: 4
+  sr_unet1_max_batch_size: 16
   checkpoint_rate: 300
-  checkpoint_path: "./checkpoint/checkpoint.pt"
+  checkpoint_path: "./checkpoint/imagen_large_checkpoint.pt"
   use_ema: True
-  lr: 0.0001
+  lr: 0.00005
   eps: 0.00000001
   beta1: 0.9
   beta2: 0.99
@@ -26,7 +26,7 @@ train:
   cond_scale: 3
 model:
   text_encoder_name: "t5-large"
-  image_sizes: [64, 256]
+  image_sizes: [64, 128]
   cond_drop_prob: 0.1
   timesteps: 1000
   base_unet:
@@ -40,7 +40,7 @@ model:
     ff_mult: 2
     memory_efficient: False
     dropout: 0.2
-  sr_unet256:
+  sr_unet1:
     dim: 96
     cond_dim: 512
     dim_mults: [1, 2, 4, 8]

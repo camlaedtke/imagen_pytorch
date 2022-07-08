@@ -132,3 +132,4 @@ dmypy.json
 coco/
 wandb/
 checkpoint/
+.DS_Store

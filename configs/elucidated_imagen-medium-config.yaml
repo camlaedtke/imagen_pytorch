@@ -14,7 +14,7 @@ train:
   checkpoint_rate: 300
   checkpoint_path: ".\\checkpoint\\elucidated_checkpoint.pt"
   use_ema: True
-  lr: [0.00002, 0.00002]
+  lr: 0.000025
   eps: 0.00000001
   beta1: 0.9
   beta2: 0.99

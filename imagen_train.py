@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore")
 
 if __name__ == "__main__":
     
-    cfg = yaml.safe_load(Path("configs\\elucidated_imagen-medium-config.yaml").read_text())
+    cfg = yaml.safe_load(Path("configs\\imagen-medium-config.yaml").read_text())
     # cfg = yaml.safe_load(Path("configs\\imagen-medium-config.yaml").read_text())
     cfg_flat = dict(FlatDict(cfg, delimiter='.'))
     
@@ -55,7 +55,7 @@ if __name__ == "__main__":
         shuffle = True,
         drop_last = True,
         num_workers = 4,
-        prefetch_factor = 6,
+        prefetch_factor = 8,
         pin_memory = True
     )
 
@@ -65,14 +65,14 @@ if __name__ == "__main__":
         shuffle = True,
         drop_last = True,
         num_workers = 4,
-        prefetch_factor = 6,
+        prefetch_factor = 8,
         pin_memory = True
     )
 
     ##### MODEL #####
     BaseUnet = Unet(
         dim = cfg["model"]["base_unet"]["dim"],
-        text_embed_dim = cfg["model"]["text_embed_dim"],
+        # text_embed_dim = cfg["model"]["text_embed_dim"],
         cond_dim = cfg["model"]["base_unet"]["cond_dim"],
         dim_mults = cfg["model"]["base_unet"]['dim_mults'], 
         num_resnet_blocks = cfg["model"]["base_unet"]["num_resnet_blocks"],
@@ -87,7 +87,7 @@ if __name__ == "__main__":
 
     SRUnet = Unet(
         dim = cfg["model"]["sr_unet1"]["dim"],
-        text_embed_dim = cfg["model"]["text_embed_dim"],
+        # text_embed_dim = cfg["model"]["text_embed_dim"],
         cond_dim = cfg["model"]["sr_unet1"]["cond_dim"],
         dim_mults = cfg["model"]["sr_unet1"]["dim_mults"], 
         num_resnet_blocks = cfg["model"]["sr_unet1"]["num_resnet_blocks"], 
@@ -99,32 +99,32 @@ if __name__ == "__main__":
         dropout = cfg["model"]["sr_unet1"]["dropout"]
     )
 
-    imagen = ElucidatedImagen(
-        unets = (BaseUnet, SRUnet),
-        image_sizes = cfg["model"]["image_sizes"],
-        text_embed_dim = cfg["model"]["text_embed_dim"],
-        text_encoder_name = cfg["model"]["text_encoder_name"],
-        cond_drop_prob = cfg["model"]["cond_drop_prob"],
-        num_sample_steps = cfg["model"]["num_sample_steps"], 
-        sigma_min = cfg["model"]["sigma_min"],          
-        sigma_max = cfg["model"]["sigma_max"],       
-        sigma_data = cfg["model"]["sigma_delta"],            
-        rho = cfg["model"]["rho"],                     
-        P_mean = cfg["model"]["P_mean"],               
-        P_std = cfg["model"]["P_std"],                 
-        S_churn = cfg["model"]["S_churn"],                
-        S_tmin = cfg["model"]["S_tmin"],
-        S_tmax = cfg["model"]["S_tmax"],
-        S_noise = cfg["model"]["S_noise"],
-    ).cuda()
+#     imagen = ElucidatedImagen(
+#         unets = (BaseUnet, SRUnet),
+#         image_sizes = cfg["model"]["image_sizes"],
+#         text_embed_dim = cfg["model"]["text_embed_dim"],
+#         text_encoder_name = cfg["model"]["text_encoder_name"],
+#         cond_drop_prob = cfg["model"]["cond_drop_prob"],
+#         num_sample_steps = cfg["model"]["num_sample_steps"], 
+#         sigma_min = cfg["model"]["sigma_min"],          
+#         sigma_max = cfg["model"]["sigma_max"],       
+#         sigma_data = cfg["model"]["sigma_delta"],            
+#         rho = cfg["model"]["rho"],                     
+#         P_mean = cfg["model"]["P_mean"],               
+#         P_std = cfg["model"]["P_std"],                 
+#         S_churn = cfg["model"]["S_churn"],                
+#         S_tmin = cfg["model"]["S_tmin"],
+#         S_tmax = cfg["model"]["S_tmax"],
+#         S_noise = cfg["model"]["S_noise"],
+#     ).cuda()
     
-    # imagen = Imagen(
-    #     unets = (BaseUnet, SRUnet),
-    #     text_encoder_name = cfg["model"]["text_encoder_name"], 
-    #     image_sizes = cfg["model"]["image_sizes"], 
-    #     cond_drop_prob = cfg["model"]["cond_drop_prob"],
-    #     timesteps = cfg["model"]["timesteps"],
-    # ).cuda()
+    imagen = Imagen(
+        unets = (BaseUnet, SRUnet),
+        text_encoder_name = cfg["model"]["text_encoder_name"], 
+        image_sizes = cfg["model"]["image_sizes"], 
+        cond_drop_prob = cfg["model"]["cond_drop_prob"],
+        timesteps = cfg["model"]["timesteps"],
+    ).cuda()
 
     ##### TRAINING #####
     trainer = ImagenTrainer(
@@ -136,11 +136,11 @@ if __name__ == "__main__":
         cosine_decay_max_steps = eval(cfg["train"]["cosine_decay_max_steps"]),
     )
     
-    try:
-        trainer.load(cfg["train"]["checkpoint_path"], strict=False)
-        print("Loaded checkpoint")
-    except: 
-        pass
+#     try:
+#         trainer.load(cfg["train"]["checkpoint_path"], strict=False)
+#         print("Loaded checkpoint")
+#     except: 
+#         pass
     
     # torch.backends.cudnn.benchmark = True
     

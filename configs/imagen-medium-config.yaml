@@ -7,14 +7,14 @@ dataset:
     root: "coco\\images\\val2014"
     ann_file: "coco\\annotations\\captions_val2014.json"
 train:
-  epochs: 25
-  batch_size: 64
+  epochs: 50
+  batch_size: 128
   base_unet_max_batch_size: 32
-  sr_unet1_max_batch_size: 32
+  sr_unet1_max_batch_size: 16
   checkpoint_rate: 300
   checkpoint_path: "./checkpoint/imagen_medium_checkpoint.pt"
   use_ema: True
-  lr: [0.000025, 0.000025]
+  lr: 0.0001
   eps: 0.00000001
   beta1: 0.9
   beta2: 0.99

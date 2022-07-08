@@ -45,10 +45,14 @@ def save_checkpoint(cfg, step, loss, trainer):
         trainer.save(cfg["train"]["checkpoint_path"])
         
         
-def print_epoch_stats(e_time, train_loss_arr, valid_loss_arr):
+# def print_epoch_stats(e_time, train_loss_arr, valid_loss_arr):
+#     print(f"   Time: {e_time:.0f} min, "\
+#           f"Train Loss: {np.mean(train_loss_arr, where=np.isnan(train_loss_arr)==False):.4f}, "\
+#           f"Valid Loss: {np.mean(valid_loss_arr, where=np.isnan(valid_loss_arr)==False):.4f}")
+
+def print_epoch_stats(e_time, train_loss_arr):
     print(f"   Time: {e_time:.0f} min, "\
-          f"Train Loss: {np.mean(train_loss_arr, where=np.isnan(train_loss_arr)==False):.4f}, "\
-          f"Valid Loss: {np.mean(valid_loss_arr, where=np.isnan(valid_loss_arr)==False):.4f}")
+          f"Train Loss: {np.mean(train_loss_arr, where=np.isnan(train_loss_arr)==False):.4f}")
     
     
 def train(cfg, train_dataloader, trainer, epoch, i, device):
@@ -131,7 +135,7 @@ def validate(cfg, valid_dataloader, trainer, epoch, i, device):
 
 
 
-def run_train_loop(cfg, trainer, train_dataloader, valid_dataloader, device):
+def run_train_loop(cfg, trainer, train_dataloader, device):
     
     for epoch in range(1, cfg["train"]["epochs"]+1):
         print(f"\nEpoch {epoch}/{cfg['train']['epochs']}")
@@ -143,15 +147,11 @@ def run_train_loop(cfg, trainer, train_dataloader, valid_dataloader, device):
 
             trainer, train_loss_arr = train(cfg, train_dataloader, trainer, epoch, i, device)
 
-            valid_loss_arr = [0]
-            if epoch % 5 == 0:
-                valid_loss_arr = validate(cfg, valid_dataloader, trainer, epoch, i, device)
-
             end = time()
             e_time = (end-start)/60 
 
-            print_epoch_stats(e_time, train_loss_arr, valid_loss_arr)
-            if not math.isnan(valid_loss_arr[-1]): 
+            print_epoch_stats(e_time, train_loss_arr)
+            if not math.isnan(train_loss_arr[-1]): 
                 trainer.save(cfg["train"]["checkpoint_path"])
             
         texts = [

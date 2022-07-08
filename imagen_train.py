@@ -42,11 +42,11 @@ if __name__ == "__main__":
         transforms = data_transforms,
     )
 
-    valid_dataset = datasets.CocoCaptions(
-        root = cfg["dataset"]["val"]["root"],
-        annFile = cfg["dataset"]["val"]["ann_file"],
-        transforms = data_transforms,
-    )
+#     valid_dataset = datasets.CocoCaptions(
+#         root = cfg["dataset"]["val"]["root"],
+#         annFile = cfg["dataset"]["val"]["ann_file"],
+#         transforms = data_transforms,
+#     )
 
 
     train_dataloader = DataLoader(
@@ -59,15 +59,15 @@ if __name__ == "__main__":
         pin_memory = True
     )
 
-    valid_dataloader = DataLoader(
-        dataset = valid_dataset, 
-        batch_size = cfg["train"]["batch_size"], 
-        shuffle = True,
-        drop_last = True,
-        num_workers = 4,
-        prefetch_factor = 8,
-        pin_memory = True
-    )
+#     valid_dataloader = DataLoader(
+#         dataset = valid_dataset, 
+#         batch_size = cfg["train"]["batch_size"], 
+#         shuffle = True,
+#         drop_last = True,
+#         num_workers = 4,
+#         prefetch_factor = 8,
+#         pin_memory = True
+#     )
 
     ##### MODEL #####
     BaseUnet = Unet(
@@ -136,13 +136,13 @@ if __name__ == "__main__":
         cosine_decay_max_steps = eval(cfg["train"]["cosine_decay_max_steps"]),
     )
     
-#     try:
-#         trainer.load(cfg["train"]["checkpoint_path"], strict=False)
-#         print("Loaded checkpoint")
-#     except: 
-#         pass
+    try:
+        trainer.load(cfg["train"]["checkpoint_path"], strict=False, only_model=True)
+        print("Loaded checkpoint")
+    except: 
+        pass
     
     # torch.backends.cudnn.benchmark = True
     
-    run_train_loop(cfg, trainer, train_dataloader, valid_dataloader, device)
+    run_train_loop(cfg, trainer, train_dataloader, device)
     

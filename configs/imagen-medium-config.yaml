@@ -14,7 +14,7 @@ train:
   checkpoint_rate: 300
   checkpoint_path: "./checkpoint/imagen_medium_checkpoint.pt"
   use_ema: True
-  lr: 0.0001
+  lr: 0.00001
   eps: 0.00000001
   beta1: 0.9
   beta2: 0.99
@@ -27,7 +27,7 @@ train:
 model:
   text_encoder_name: "t5-large"
   image_sizes: [64, 256]
-  cond_drop_prob: 0.1
+  cond_drop_prob: 0.5
   timesteps: 1000
   base_unet:
     dim: 128

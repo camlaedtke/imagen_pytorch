@@ -1,18 +1,15 @@
 dataset:
-  image_size: 128
-  train:
-    root: "coco\\images\\train2014"
-    ann_file: "coco\\annotations\\captions_train2014.json"
-  val:
-    root: "coco\\images\\val2014"
-    ann_file: "coco\\annotations\\captions_val2014.json"
+  image_size: 256
+  info_file: "coco/dataset_info.pkl"
+  captions_per_image: 5
 train:
-  epochs: 40
-  batch_size: 64
+  epochs: 50
+  batch_size: 128
   base_unet_max_batch_size: 32
   sr_unet1_max_batch_size: 16
+  sr_unet2_max_batch_size: 4
   checkpoint_rate: 300
-  checkpoint_path: "./checkpoint/imagen_large_checkpoint.pt"
+  checkpoint_path: "./checkpoint/imagen_medium_checkpoint.pt"
   use_ema: True
   lr: 0.00005
   eps: 0.00000001
@@ -23,10 +20,10 @@ train:
   group_wd_params: True
   warmup_steps: None
   cosine_decay_max_steps: None
-  cond_scale: 3
+  cond_scale: 5
 model:
   text_encoder_name: "t5-large"
-  image_sizes: [64, 128]
+  image_sizes: [64, 256, 1024]
   cond_drop_prob: 0.1
   timesteps: 1000
   base_unet:
@@ -41,11 +38,22 @@ model:
     memory_efficient: False
     dropout: 0.2
   sr_unet1:
-    dim: 96
+    dim: 64
     cond_dim: 512
     dim_mults: [1, 2, 4, 8]
     num_resnet_blocks: [2, 4, 8, 8]
     layer_attns: [False, False, False, True]
+    layer_cross_attns: [False, False, False, True]
+    attn_heads: 8
+    ff_mult: 2
+    memory_efficient: True
+    dropout: 0.2
+  sr_unet2:
+    dim: 64
+    cond_dim: 512
+    dim_mults: [1, 2, 4, 8]
+    num_resnet_blocks: [2, 4, 8, 8]
+    layer_attns: False
     layer_cross_attns: [False, False, False, True]
     attn_heads: 8
     ff_mult: 2

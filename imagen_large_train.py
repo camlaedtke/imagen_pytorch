@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore")
 
 if __name__ == "__main__":
     
-    cfg = yaml.safe_load(Path("configs\\imagen-config.yaml").read_text())
+    cfg = yaml.safe_load(Path("configs\\imagen-large-config.yaml").read_text())
     cfg_flat = dict(FlatDict(cfg, delimiter='.'))
     
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -54,7 +54,7 @@ if __name__ == "__main__":
     )
 
 
-    SRUnet = Unet(
+    SRUnet1 = Unet(
         dim = cfg["model"]["sr_unet1"]["dim"],
         cond_dim = cfg["model"]["sr_unet1"]["cond_dim"],
         dim_mults = cfg["model"]["sr_unet1"]["dim_mults"], 
@@ -66,10 +66,23 @@ if __name__ == "__main__":
         memory_efficient = cfg["model"]["sr_unet1"]["memory_efficient"],
         dropout = cfg["model"]["sr_unet1"]["dropout"]
     )
+    
+    SRUnet2 = Unet(
+        dim = cfg["model"]["sr_unet2"]["dim"],
+        cond_dim = cfg["model"]["sr_unet2"]["cond_dim"],
+        dim_mults = cfg["model"]["sr_unet2"]["dim_mults"], 
+        num_resnet_blocks = cfg["model"]["sr_unet2"]["num_resnet_blocks"], 
+        layer_attns = cfg["model"]["sr_unet2"]["layer_attns"],
+        layer_cross_attns = cfg["model"]["sr_unet2"]["layer_cross_attns"], 
+        attn_heads = cfg["model"]["sr_unet2"]["attn_heads"],
+        ff_mult = cfg["model"]["sr_unet2"]["ff_mult"],
+        memory_efficient = cfg["model"]["sr_unet2"]["memory_efficient"],
+        dropout = cfg["model"]["sr_unet2"]["dropout"]
+    )
 
 
     imagen = Imagen(
-        unets = (BaseUnet, SRUnet),
+        unets = (BaseUnet, SRUnet1, SRUnet2),
         text_encoder_name = cfg["model"]["text_encoder_name"], 
         image_sizes = cfg["model"]["image_sizes"], 
         cond_drop_prob = cfg["model"]["cond_drop_prob"],

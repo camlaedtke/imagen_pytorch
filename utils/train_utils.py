@@ -45,20 +45,15 @@ def save_checkpoint(cfg, step, loss, trainer):
         trainer.save(cfg["train"]["checkpoint_path"])
         
         
-# def print_epoch_stats(e_time, train_loss_arr, valid_loss_arr):
-#     print(f"   Time: {e_time:.0f} min, "\
-#           f"Train Loss: {np.mean(train_loss_arr, where=np.isnan(train_loss_arr)==False):.4f}, "\
-#           f"Valid Loss: {np.mean(valid_loss_arr, where=np.isnan(valid_loss_arr)==False):.4f}")
-
-def print_epoch_stats(e_time, train_loss_arr):
+def print_epoch_stats(e_time, loss_arr):
     print(f"   Time: {e_time:.0f} min, "\
-          f"Train Loss: {np.mean(train_loss_arr, where=np.isnan(train_loss_arr)==False):.4f}")
+          f"Train Loss: {np.mean(loss_arr, where=np.isnan(loss_arr)==False):.4f}")
     
     
-def train(cfg, train_dataloader, trainer, epoch, i, device):
-    train_loss_arr = []
+def train(cfg, dataloader, trainer, epoch, i, device):
+    loss_arr = []
     fetch_times = []; embed_times = []; loss_times = []; update_times = []; step_times = []
-    for step, batch in enumerate(train_dataloader):
+    for step, batch in enumerate(dataloader):
         step_start = time()
         
         fetch_start = time()
@@ -71,6 +66,13 @@ def train(cfg, train_dataloader, trainer, epoch, i, device):
         text_embeds, text_masks = get_emb_tensor(cfg, texts, device)
         embed_end = time()
         embed_times.append(embed_end-embed_start)
+        
+        if i == 1:
+            max_bs = cfg["train"]["base_unet_max_batch_size"]
+        elif i == 2:
+            max_bs = cfg["train"]["sr_unet1_max_batch_size"]
+        else:
+            max_bs = cfg["train"]["sr_unet2_max_batch_size"]
 
         loss_start = time()
         loss = trainer(
@@ -78,7 +80,7 @@ def train(cfg, train_dataloader, trainer, epoch, i, device):
             text_embeds = text_embeds, 
             text_masks = text_masks, 
             unet_number = i, 
-            max_batch_size=cfg["train"]["base_unet_max_batch_size"] if i==1 else cfg["train"]["sr_unet1_max_batch_size"]
+            max_batch_size = max_bs
         )
         loss_end = time()
         loss_times.append(loss_end-loss_start)
@@ -92,10 +94,10 @@ def train(cfg, train_dataloader, trainer, epoch, i, device):
         step_times.append(step_end-step_start)
         
         
-        train_loss_arr.append(loss)
+        loss_arr.append(loss)
         save_checkpoint(cfg, step, loss, trainer)
         
-        curr_step = int(len(train_dataloader)*(epoch-1) + step)
+        curr_step = int(len(dataloader)*(epoch-1) + step)
         wandb.log({f"Train Loss {i}": loss, f"Train {i} Step": curr_step})
         print(f"\r   Train Step {step+1}/{len(train_dataloader)}, Train Loss: {loss:.4f}", end='')
         
@@ -108,50 +110,29 @@ def train(cfg, train_dataloader, trainer, epoch, i, device):
     print()
     print(f"      Step: {step_time:.4f}s, Img load: {fetch_time:.4f}s, Embed: {embed_time:.4f}s, "\
           f"Loss: {loss_time:.4f}s, Update: {update_time:.4f}s")
-    return trainer, train_loss_arr
-
-
-def validate(cfg, valid_dataloader, trainer, epoch, i, device):
-    valid_loss_arr = []
-    for step, batch in enumerate(valid_dataloader):
-        images, texts = batch
-        images = images.to(device)
-        text_embeds, text_masks = get_emb_tensor(cfg, texts, device)
-
-        loss = trainer(
-            images, 
-            text_embeds = text_embeds, 
-            text_masks = text_masks, 
-            unet_number = i, 
-            max_batch_size=cfg["train"]["base_unet_max_batch_size"] if i==1 else cfg["train"]["sr_unet1_max_batch_size"]
-        )
-        valid_loss_arr.append(loss)
-        
-        curr_step = int(len(valid_dataloader)*(epoch-1) + step)
-        wandb.log({f"Validation Loss {i}": loss, f"Valid {i} Step": curr_step})
-        print(f"\r   Valid Step {step+1}/{len(valid_dataloader)}, Valid Loss: {loss:.4f}", end='')
-    print()
-    return valid_loss_arr
+    return trainer, loss_arr
 
 
 
-def run_train_loop(cfg, trainer, train_dataloader, device):
+def run_train_loop(cfg, trainer, dataloader, device, large=False):
+    
+    unet_ids = (1,2) if not large else (1,2,3)
     
     for epoch in range(1, cfg["train"]["epochs"]+1):
         print(f"\nEpoch {epoch}/{cfg['train']['epochs']}")
-        
-        for i in (1,2):
+
+        for i in unet_ids:
             
             print(f"--- Unet {i} ---")
             start = time()
 
-            trainer, train_loss_arr = train(cfg, train_dataloader, trainer, epoch, i, device)
+            trainer, loss_arr = train(cfg, dataloader, trainer, epoch, i, device)
 
             end = time()
             e_time = (end-start)/60 
 
-            print_epoch_stats(e_time, train_loss_arr)
-            if not math.isnan(train_loss_arr[-1]): 
+            print_epoch_stats(e_time, loss_arr)
+            if not math.isnan(loss_arr[-1]): 
                 trainer.save(cfg["train"]["checkpoint_path"])
             
         texts = [
@@ -160,7 +141,6 @@ def run_train_loop(cfg, trainer, train_dataloader, device):
             'the milky way galaxy in the style of monet'
         ]
         sampled_images = trainer.sample(texts, cond_scale = cfg["train"]["cond_scale"])
-        # image_list = display_images(sampled_images)
         image_list = format_images(sampled_images)
         images_pil = [Image.fromarray(image) for image in image_list]
         wandb.log({"Samples": [wandb.Image(image) for image in images_pil], "Epoch": epoch})

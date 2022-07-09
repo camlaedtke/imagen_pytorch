@@ -8,8 +8,7 @@ from flatdict import FlatDict
 from torchvision import datasets
 import torchvision.transforms as T
 from torch.utils.data import DataLoader
-from imagen_pytorch import Unet, Imagen, ImagenTrainer, ElucidatedImagen
-from utils.transformations import ComposeDouble, FunctionWrapperDouble, select_random_label
+from imagen_pytorch import Unet, Imagen, ImagenTrainer
 from utils.train_utils import run_train_loop
 from utils.data_utils import CocoDataset
 
@@ -18,7 +17,7 @@ warnings.filterwarnings("ignore")
 
 if __name__ == "__main__":
     
-    cfg = yaml.safe_load(Path("configs\\imagen-config.yaml").read_text())
+    cfg = yaml.safe_load(Path("configs\\imagen-medium-config.yaml").read_text())
     cfg_flat = dict(FlatDict(cfg, delimiter='.'))
     
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -82,15 +81,17 @@ if __name__ == "__main__":
         lr = cfg["train"]["lr"],
         amp = cfg["train"]["amp"],
         use_ema = cfg["train"]["use_ema"],
+        max_grad_norm = cfg["train"]["max_grad_norm"],
         warmup_steps = eval(cfg["train"]["warmup_steps"]),
         cosine_decay_max_steps = eval(cfg["train"]["cosine_decay_max_steps"]),
     )
     
-#     try:
-#         trainer.load(cfg["train"]["checkpoint_path"], strict=False, only_model=True)
-#         print("Loaded checkpoint")
-#     except: 
-#         pass
+    if cfg["train"]["load_checkpoint"]:
+        try:
+            trainer.load(cfg["train"]["checkpoint_path"], strict=False, only_model=True)
+            print("Loaded checkpoint")
+        except: 
+            pass
     
     # torch.backends.cudnn.benchmark = True
     

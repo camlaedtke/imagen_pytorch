@@ -15,7 +15,6 @@ def get_emb_tensor(cfg, targets, device):
     return text_embeds, text_masks
 
 
-
 def display_images(display_list):
     image_list = []
     plt.figure(figsize=(10, 10), dpi=150)
@@ -46,8 +45,7 @@ def save_checkpoint(cfg, step, loss, trainer):
         
         
 def print_epoch_stats(e_time, loss_arr):
-    print(f"   Time: {e_time:.0f} min, "\
-          f"Train Loss: {np.mean(loss_arr, where=np.isnan(loss_arr)==False):.4f}")
+    print(f"   Time: {e_time:.0f} min, Train Loss: {np.mean(loss_arr, where=np.isnan(loss_arr)==False):.4f}")
     
     
 def train(cfg, dataloader, trainer, epoch, i, device):
@@ -99,7 +97,7 @@ def train(cfg, dataloader, trainer, epoch, i, device):
         
         curr_step = int(len(dataloader)*(epoch-1) + step)
         wandb.log({f"Train Loss {i}": loss, f"Train {i} Step": curr_step})
-        print(f"\r   Train Step {step+1}/{len(train_dataloader)}, Train Loss: {loss:.4f}", end='')
+        print(f"\r   Train Step {step+1}/{len(dataloader)}, Train Loss: {loss:.4f}", end='')
         
     
     step_time = np.mean(step_times)
@@ -114,10 +112,10 @@ def train(cfg, dataloader, trainer, epoch, i, device):
 
 
 
-def run_train_loop(cfg, trainer, dataloader, device, large=False):
+def run_train_loop(cfg, trainer, dataloader, device):
     
-    unet_ids = (1,2) if not large else (1,2,3)
-    
+    unet_ids = (1,2) if len(cfg["model"]["image_sizes"]) == 2 else (1,2,3)
+        
     for epoch in range(1, cfg["train"]["epochs"]+1):
         print(f"\nEpoch {epoch}/{cfg['train']['epochs']}")
 

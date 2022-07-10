@@ -8,6 +8,7 @@ train:
   base_unet_max_batch_size: 32
   sr_unet1_max_batch_size: 4
   load_checkpoint: True
+  load_checkpoint_path: "./checkpoint/imagen_medium_checkpoint.pt"
   checkpoint_rate: 300
   checkpoint_path: "./checkpoint/imagen_large_checkpoint.pt"
   use_ema: True

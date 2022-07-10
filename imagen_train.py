@@ -88,7 +88,7 @@ if __name__ == "__main__":
     
     if cfg["train"]["load_checkpoint"]:
         try:
-            trainer.load(cfg["train"]["checkpoint_path"], strict=False, only_model=True)
+            trainer.load(cfg["train"]["load_checkpoint_path"], strict=False, only_model=True)
             print("Loaded checkpoint")
         except: 
             pass

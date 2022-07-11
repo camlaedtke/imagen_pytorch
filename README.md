@@ -5,11 +5,11 @@ Training pipeline for Imagen, Google's Text-to-Image Neural Network, on the Coco
 Training runs are logged in Wandb: https://wandb.ai/camlaedtke/imagen?workspace=user-camlaedtke
 
 Some running notes
-- Batch size of 192 seems larger than necessary. 128 should be fine. Not sure about 64. 
-- Learning rate between 2e-5 and 5e-5 seems good. 
-- Setting `max_grad_norm = 1.25` helps a lot
+- Batch size of 64-128 works. 
+- Setting `max_grad_norm = 1.25` makes training more stable, but appears to considerably slow convergence and hurt performance.
+- Best results have been attained with a learning rate of 1e-5. The larger the SR unet, the smaller the learning rate should be. 
 
 Remaining questions
-- Set `cond_drop_prob = 0.1` or `cond_drop_prob=0.5`?
+- Set `cond_drop_prob=0.1` or `cond_drop_prob=0.5`?
 - Benefits to setting `warmup_steps` and/or `cosine_decay_max_steps`?
-- Set `dropout` to default of 0.1, or change to 0.2?
+- Would different learning rates for the unets be better? Potentially a smaller lr for the second unet? 

@@ -134,6 +134,9 @@ def run_train_loop(cfg, trainer, dataloader, device):
                 trainer.save(cfg["train"]["checkpoint_path"])
             
         texts = [
+            'dog',
+            'cheeseburger',
+            'blue car',
             'red flowers in a white vase',
             'a puppy looking anxiously at a giant donut on the table',
             'the milky way galaxy in the style of monet'

@@ -81,14 +81,14 @@ if __name__ == "__main__":
         lr = cfg["train"]["lr"],
         amp = cfg["train"]["amp"],
         use_ema = cfg["train"]["use_ema"],
-        max_grad_norm = cfg["train"]["max_grad_norm"],
+        max_grad_norm = eval(cfg["train"]["max_grad_norm"]),
         warmup_steps = eval(cfg["train"]["warmup_steps"]),
         cosine_decay_max_steps = eval(cfg["train"]["cosine_decay_max_steps"]),
     )
     
     if cfg["train"]["load_checkpoint"]:
         try:
-            trainer.load(cfg["train"]["load_checkpoint_path"], strict=False, only_model=True)
+            trainer.load(cfg["train"]["load_checkpoint_path"], strict=False, only_model=False)
             print("Loaded checkpoint")
         except: 
             pass

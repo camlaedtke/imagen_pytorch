@@ -12,11 +12,11 @@ train:
   checkpoint_rate: 300
   checkpoint_path: "./checkpoint/imagen_medium_checkpoint.pt"
   use_ema: True
-  lr: 0.00005
+  lr: 0.00001
   eps: 0.00000001 
   beta1: 0.9
   beta2: 0.99
-  max_grad_norm: 1.25
+  max_grad_norm: None
   amp: True
   group_wd_params: True
   warmup_steps: None

@@ -6,11 +6,11 @@ train:
   epochs: 50
   batch_size: 96
   base_unet_max_batch_size: 16
-  sr_unet1_max_batch_size: 16
+  sr_unet1_max_batch_size: 8
   load_checkpoint: False
-  load_checkpoint_path: "./checkpoint/imagen_large_checkpoint.pt"
+  load_checkpoint_path: "./checkpoint/imagen_xl_checkpoint.pt"
   checkpoint_rate: 500
-  checkpoint_path: "./checkpoint/imagen_large_checkpoint.pt"
+  checkpoint_path: "./checkpoint/imagen_xl_checkpoint.pt"
   use_ema: True
   lr: 0.000005
   eps: 0.00000001
@@ -39,7 +39,7 @@ model:
     memory_efficient: False
     dropout: 0.15
   sr_unet1:
-    dim: 64
+    dim: 96
     cond_dim: 512
     dim_mults: [1, 2, 4, 8]
     num_resnet_blocks: [2, 4, 8, 8]

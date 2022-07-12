@@ -10,9 +10,11 @@ from imagen_pytorch.t5 import t5_encode_text
 
 
 def get_emb_tensor(cfg, targets, device):
-    text_embeds, text_masks = t5_encode_text(targets, name = cfg["model"]["text_encoder_name"])
+    text_embeds, text_masks = t5_encode_text(targets, name=cfg["model"]["text_encoder_name"], return_attn_mask=True)
     text_embeds, text_masks = map(lambda t: t.to(device), (text_embeds, text_masks))
     return text_embeds, text_masks
+
+
 
 
 def display_images(display_list):
@@ -144,4 +146,26 @@ def run_train_loop(cfg, trainer, dataloader, device):
         sampled_images = trainer.sample(texts, cond_scale = cfg["train"]["cond_scale"])
         image_list = format_images(sampled_images)
         images_pil = [Image.fromarray(image) for image in image_list]
-        wandb.log({"Samples": [wandb.Image(image) for image in images_pil], "Epoch": epoch})
+        wandb.log({"Samples": [wandb.Image(image, caption=caption) for image, caption in zip(images_pil, texts)], "Epoch": epoch})
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        

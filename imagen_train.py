@@ -167,7 +167,7 @@ if __name__ == "__main__":
     trainer = ImagenTrainer(
         imagen, 
         lr = cfg["train"]["lr"],
-        fp16 = cfg["train"]["amp"],
+        amp = cfg["train"]["amp"],
         use_ema = cfg["train"]["use_ema"],
         max_grad_norm = eval(cfg["train"]["max_grad_norm"]),
         warmup_steps = eval(cfg["train"]["warmup_steps"]),

@@ -1,6 +1,6 @@
 # imagen_pytorch
 
-Training pipeline for Imagen, Google's Text-to-Image Neural Network, on the CocoCaptions dataset. Using @lucidrains excellent [repo](https://github.com/lucidrains/imagen-pytorch). Using `imagen-pytorch` version 0.21.1 because recent changes have made single GPU training a bit more difficult. 
+Training pipeline for Imagen, Google's Text-to-Image Neural Network, on the CocoCaptions dataset. Using @lucidrains excellent [repo](https://github.com/lucidrains/imagen-pytorch). Currently using `imagen-pytorch` version 0.20.7 because recent changes have made single GPU training a bit more difficult. 
 
 Training runs are logged in Wandb: https://wandb.ai/camlaedtke/imagen?workspace=user-camlaedtke
 

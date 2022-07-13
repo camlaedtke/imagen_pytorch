@@ -101,7 +101,7 @@ def train(cfg, dataloader, trainer, epoch, i, device):
         wandb.log({f"Train Loss {i}": loss, f"Train {i} Step": curr_step})
         print(f"\r   Train Step {step+1}/{len(dataloader)}, Train Loss: {loss:.4f}", end='')
         
-    
+
     step_time = np.mean(step_times)
     fetch_time = np.mean(fetch_times)
     embed_time = np.mean(embed_times)
@@ -111,7 +111,6 @@ def train(cfg, dataloader, trainer, epoch, i, device):
     print(f"      Step: {step_time:.4f}s, Img load: {fetch_time:.4f}s, Embed: {embed_time:.4f}s, "\
           f"Loss: {loss_time:.4f}s, Update: {update_time:.4f}s")
     return trainer, loss_arr
-
 
 
 def run_train_loop(cfg, trainer, dataloader, device):
@@ -124,6 +123,9 @@ def run_train_loop(cfg, trainer, dataloader, device):
         for i in unet_ids:
             
             print(f"--- Unet {i} ---")
+            if epoch != 0 and i != 1:
+                trainer.load(cfg["train"]["checkpoint_path"])
+            
             start = time()
 
             trainer, loss_arr = train(cfg, dataloader, trainer, epoch, i, device)

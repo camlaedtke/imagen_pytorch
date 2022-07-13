@@ -76,15 +76,14 @@ def run_train_loop(cfg, trainer, dataloader, device):
         
         for i in (1,2):
             print(f"--- Unet {i} ---")
-
             start = time()
 
             trainer, loss_arr = train(cfg, dataloader, trainer, epoch, i, device)
 
             end = time()
             e_time = (end-start)/60 
-
             print_epoch_stats(e_time, loss_arr)
+            
             if not math.isnan(loss_arr[-1]): 
                 trainer.save(cfg["train"]["checkpoint_path"])
             
@@ -164,6 +163,7 @@ if __name__ == "__main__":
         timesteps = cfg["model"]["timesteps"],
     ).cuda()
     
+    
     trainer = ImagenTrainer(
         imagen, 
         lr = cfg["train"]["lr"],
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     )
 
     ##### TRAINING #####
-    # torch.backends.cudnn.benchmark = True
+    torch.backends.cudnn.benchmark = True
     
     if cfg["train"]["load_checkpoint"]:
         try:

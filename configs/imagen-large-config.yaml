@@ -4,9 +4,9 @@ dataset:
   captions_per_image: 5
 train:
   epochs: 50
-  batch_size: 96
-  base_unet_max_batch_size: 24
-  sr_unet1_max_batch_size: 8
+  batch_size: 72
+  base_unet_max_batch_size: 18
+  sr_unet1_max_batch_size: 6
   load_checkpoint: False
   load_checkpoint_path: "./checkpoint/imagen_large_checkpoint.pt"
   checkpoint_rate: 500

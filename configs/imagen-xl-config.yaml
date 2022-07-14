@@ -4,9 +4,9 @@ dataset:
   captions_per_image: 5
 train:
   epochs: 50
-  batch_size: 96
-  base_unet_max_batch_size: 24
-  sr_unet1_max_batch_size: 8
+  batch_size: 64
+  base_unet_max_batch_size: 16
+  sr_unet1_max_batch_size: 2
   load_checkpoint: False
   load_checkpoint_path: "./checkpoint/imagen_xl_checkpoint.pt"
   checkpoint_rate: 500
@@ -39,7 +39,7 @@ model:
     memory_efficient: False
     dropout: 0.15
   sr_unet1:
-    dim: 96
+    dim: 128
     cond_dim: 512
     dim_mults: [1, 2, 4, 8]
     num_resnet_blocks: [2, 4, 8, 8]
@@ -48,4 +48,4 @@ model:
     attn_heads: 8
     ff_mult: 2
     memory_efficient: True
-    dropout: 0.1
+    dropout: 0.15

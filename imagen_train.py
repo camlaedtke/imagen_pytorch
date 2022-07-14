@@ -101,8 +101,6 @@ def run_train_loop(cfg, trainer, dataloader, device):
         wandb.log({"Samples": [wandb.Image(image, caption=caption) for image, caption in zip(images_pil, texts)], "Epoch": epoch})
         
         
-
-
 if __name__ == "__main__":
     
     cfg = yaml.safe_load(Path("configs\\imagen-large-config.yaml").read_text())

@@ -1,18 +1,16 @@
 dataset:
   image_size: 256
-  info_file: "coco/dataset_info.pkl"
-  captions_per_image: 5
 train:
-  epochs: 50
-  batch_size: 72
-  base_unet_max_batch_size: 18
+  epochs: 5
+  batch_size: 240
+  base_unet_max_batch_size: 16
   sr_unet1_max_batch_size: 6
-  load_checkpoint: False
+  load_checkpoint: True
   load_checkpoint_path: "./checkpoint/imagen_large_checkpoint.pt"
-  checkpoint_rate: 500
+  checkpoint_rate: 1000
   checkpoint_path: "./checkpoint/imagen_large_checkpoint.pt"
   use_ema: True
-  lr: 0.00001
+  lr: 0.000015
   eps: 0.00000001
   beta1: 0.9
   beta2: 0.99
@@ -23,7 +21,7 @@ train:
   cosine_decay_max_steps: None
   cond_scale: 5
 model:
-  text_encoder_name: "google/t5-v1_1-large"
+  text_encoder_name: "google/t5-v1_1-xl"
   image_sizes: [64, 256]
   cond_drop_prob: 0.1
   timesteps: 1000

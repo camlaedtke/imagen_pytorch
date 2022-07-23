@@ -130,6 +130,10 @@ dmypy.json
 
 # Other
 coco/
+cc3m/
+cc12m/
 wandb/
 checkpoint/
 .DS_Store
+cc3m.tsv
+cc12m.tsv

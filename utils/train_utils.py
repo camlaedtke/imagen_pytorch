@@ -21,8 +21,8 @@ def display_images(display_list):
     image_list = []
     plt.figure(figsize=(10, 10), dpi=150)
     for i in range(len(display_list)):
-        img = display_list[i].cpu().numpy() * 255
-        img = np.swapaxes(img,0,2).astype(np.uint8)
+        img = display_list[i].cpu().permute(1,2,0).numpy() * 255
+        img = img.astype(np.uint8)
         image_list.append(img)
         plt.subplot(1, len(display_list), i+1)
         plt.imshow(img)

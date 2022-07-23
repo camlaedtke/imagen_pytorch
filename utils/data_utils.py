@@ -6,7 +6,7 @@ from torch import nn
 from torch.utils import data
 from torchvision import transforms as T
 from utils.transformations import ComposeDouble, FunctionWrapperDouble, select_random_label, select_fixed_label
-
+import webdataset as wds
 
 class CocoDataset(data.Dataset):
     def __init__(self, cfg):
@@ -33,3 +33,36 @@ class CocoDataset(data.Dataset):
         image = Image.open(self.image_paths[index]).convert("RGB")
         captions = self.captions[index]
         return self.transform(image, captions)
+    
+    
+    
+class CC3MDataset(data.Dataset):
+    # TODO: MAKE SURE IMAGES ARE IN FLOAT32!!
+    def __init__(self, cfg):
+        super().__init__()
+        
+        self.transform = T.Compose([
+            T.Resize(cfg["dataset"]["image_size"]),
+            T.RandomHorizontalFlip(),
+            T.CenterCrop(cfg["dataset"]["image_size"]),
+            T.ToTensor()
+        ])
+        
+        self.dataset = (
+            wds.WebDataset(cfg["dataset"]["data_path"])
+            .shuffle(10000)
+            .decode("pil")
+            .rename(image="jpg;png", caption="txt")
+            .map_dict(image=self.transform)
+            .to_tuple("image", "caption")
+        )
+
+   
+    # def __len__(self):
+    #     return len(self.image_paths)
+
+    
+    def __getitem__(self, index):
+        image, caption = next(iter(self.dataset))
+        
+        return image, caption

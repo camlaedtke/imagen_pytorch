@@ -18,7 +18,7 @@ import webdataset as wds
 warnings.filterwarnings("ignore")
 
 
-def padding_tensor(sequences):
+def pad_tensor(sequences):
     num = len(sequences)
     max_len = max([s.size(1) for s in sequences])
     out_dims = (num, max_len, 2048)
@@ -29,39 +29,29 @@ def padding_tensor(sequences):
     return out_tensor
 
 
-def my_collate(batch):
+def pad_embeddings(batch):
     imgs = [item[0] for item in batch]
     embeds = [item[1] for item in batch]
-    embeds = padding_tensor(embeds)
+    embeds = pad_tensor(embeds)
     return [imgs, embeds]
-
-
-def format_images(display_list):
-    image_list = []
-    for i in range(len(display_list)):
-        img = display_list[i].cpu().permute(1,2,0).numpy() * 255
-        img = img.astype(np.uint8)
-        image_list.append(img)
-    return image_list
     
     
-def log_sample_images(cfg, trainer, i):
+def get_sample_images(cfg, trainer, i):
     texts = ['dog', 'cheeseburger', 'blue car', 'red flowers in a white vase',
                  'a puppy looking anxiously at a giant donut on the table', 'the milky way galaxy in the style of monet']
     sampled_images = trainer.sample(texts, cond_scale = cfg["train"]["cond_scale"], stop_at_unet_number=i)
     image_list = format_images(sampled_images)
     images_pil = [Image.fromarray(image) for image in image_list]
-    wandb.log({"Samples": [wandb.Image(image, caption=caption) for image, caption in zip(images_pil, texts)]})
+    return images_pil, texts
+    
     
     
 def train(cfg, dataloader, trainer, epoch, i, device):
-    loss_arr = []
     # cfg["dataset"]["num_images"]
-    n_batches = (848950 // cfg["train"]["batch_size"])
+    n_batches = 3397838 // cfg["train"]["batch_size"]
     step_start = time()
     for step, batch in enumerate(dataloader): 
         curr_step = int(n_batches*(epoch-1) + step)
-        # step_start = time()
         
         fetch_start = time()
         images, text_embeds = batch
@@ -82,7 +72,6 @@ def train(cfg, dataloader, trainer, epoch, i, device):
             unet_number = i, 
             max_batch_size = cfg["train"]["base_unet_max_batch_size"] if i == 1 else cfg["train"]["sr_unet1_max_batch_size"]
         )
-        loss_arr.append(loss)
         loss_end = time()
         loss_time = loss_end-loss_start
         
@@ -96,27 +85,37 @@ def train(cfg, dataloader, trainer, epoch, i, device):
         step_time = step_end-step_start
         
         dead_time = step_time - fetch_time - embed_time - loss_time - update_time
-
-
+        
         if step % cfg["train"]["checkpoint_rate"] == 0 and step !=0 and not math.isnan(loss): 
-            log_sample_images(cfg, trainer, i)
+            images_pil, texts = get_sample_images(cfg, trainer, i)
+            wandb.log({
+                f"Train {i} Step": curr_step, 
+                f"Train Loss {i}": loss, 
+                f"Step time {i}": step_time, 
+                f"Img load time {i}": fetch_time, 
+                f"Embed load time {i}": embed_time, 
+                f"Loss time {i}": loss_time,
+                f"Update time {i}": update_time, 
+                f"Dead time {i}": dead_time,
+                "Samples": [wandb.Image(image, caption=caption) for image, caption in zip(images_pil, texts)]
+            })
             trainer.save(cfg["train"]["checkpoint_path"])
             print()
-            
-        wandb.log({
-            f"Train {i} Step": curr_step,
-            f"Train Loss {i}": loss, 
-            f"Step time {i}": step_time, 
-            f"Img load time {i}": fetch_time, 
-            f"Embed load time {i}": embed_time,
-            f"Loss time {i}": loss_time,
-            f"Update time {i}": update_time,
-            f"Dead time {i}": dead_time
-        })
+        else:
+            wandb.log({
+                f"Train {i} Step": curr_step, 
+                f"Train Loss {i}": loss, 
+                f"Step time {i}": step_time, 
+                f"Img load time {i}": fetch_time, 
+                f"Embed load time {i}": embed_time, 
+                f"Loss time {i}": loss_time,
+                f"Update time {i}": update_time, 
+                f"Dead time {i}": dead_time
+            })
         print(f"\rTrain Step {step+1}/{n_batches} --- Loss: {loss:.4f} ", end='')
         step_start = time()
 
-    return trainer, loss_arr
+    return trainer
 
 
 def run_train_loop(cfg, trainer, dataloader, device, i=1):
@@ -124,10 +123,10 @@ def run_train_loop(cfg, trainer, dataloader, device, i=1):
         print(f"\nEpoch {epoch}/{cfg['train']['epochs']}")
         print(f"--- Unet {i} ---")
         start = time()
-        trainer, loss_arr = train(cfg, dataloader, trainer, epoch, i, device)
+        trainer = train(cfg, dataloader, trainer, epoch, i, device)
         end = time()
         print(f"  Time: {(end-start)/60:.0f} min")
-
+        
         
         
 if __name__ == "__main__":
@@ -147,52 +146,7 @@ if __name__ == "__main__":
         T.CenterCrop(cfg["dataset"]["image_size"]),
         T.ToTensor()
     ])
-
-    # Benchmark ...
-    # Times: Step: 7.3140s, Img load: 0.0083s, Embed: 0.6073s, Loss: 6.5603s, Update: 0.1382s
-    """
-    cc_dataset = (
-        wds.WebDataset("cc12m/{00000..00500}.tar")
-        .shuffle(4800)
-        .decode("pilrgb")
-        .rename(image="jpg;png", caption="txt")
-        .map_dict(image=preproc)
-        .to_tuple("image", "caption")
-    )
     
-    cc_dataloader = DataLoader(
-        dataset = cc_dataset, 
-        batch_size = cfg["train"]["batch_size"], 
-        drop_last = True,
-        num_workers = 4,
-        prefetch_factor = 8,
-        pin_memory = True
-    )
-    """
-    
-    # Benchmark ...
-    """
-    batch size: 240 (24/12)
-    checkpoint_rate: 100
-    | NW  | PF  | Step             | Img              | Embed            | Loss             | Update           |
-    | --- | --- | ---------------- | ---------------- | ---------------- | ---------------- | ---------------- |
-    |  1  |  2  | 3.587 +/- 0.406s | 0.081 +/- 0.015s | 0.021 +/- 0.024s | 3.346 +/- 0.378s | 0.139 +/- 0.048s |
-    |  1  |  4  | 3.578 +/- 0.426s | 0.077 +/- 0.004s | 0.010 +/- 0.002s | 3.356 +/- 0.403s | 0.134 +/- 0.043s |
-    |  1  |  6  | 3.566 +/- 0.484s | 0.078 +/- 0.004s | 0.010 +/- 0.003s | 3.345 +/- 0.455s | 0.133 +/- 0.045s |
-    |  2  |  6  | 3.598 +/- 0.385s | 0.079 +/- 0.009s | 0.012 +/- 0.012s | 3.373 +/- 0.351s | 0.133 +/- 0.042s |
-    |  4  |  4  | 3.612 +/- 0.459s | 0.086 +/- 0.022s | 0.020 +/- 0.024s | 3.369 +/- 0.416s | 0.138 +/- 0.049s |
-    |  4  |  2  | 3.694 +/- 1.332s | 0.082 +/- 0.014s | 0.021 +/- 0.027s | 3.462 +/- 1.296s | 0.130 +/- 0.043s |
-    
-    
-    batch size: 256 (36/16)
-    checkpoint_rate: 250
-    
-    | NW  | PF  | Step             | Img              | Embed            | Loss             | Update           |
-    | --- | --- | ---------------- | ---------------- | ---------------- | ---------------- | ---------------- |
-    |  1  |  4  | 3.681 +/- 0.826s | 0.083 +/- 0.007s | 0.011 +/- 0.006s | 3.422 +/- 0.803s | 0.165 +/- 0.045s |
-    |  2  |  4  |  |  |  |  |  |
-    
-    """
     
     cc_dataset = (
         wds.WebDataset("file:E:/datasets/cc12m/{00000..00099}.tar") 
@@ -210,7 +164,7 @@ if __name__ == "__main__":
         num_workers = cfg["dataset"]["num_workers"],
         prefetch_factor = cfg["dataset"]["prefetch_factor"],
         pin_memory = True,
-        collate_fn = my_collate
+        collate_fn = pad_embeddings
     )
     
     

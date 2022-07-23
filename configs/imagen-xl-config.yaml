@@ -1,9 +1,12 @@
 dataset:
   image_size: 256
-  data_path: "cc3m/{00000..00331}.tar"
+  shuffle_size: 4096
+  num_workers: 1
+  prefetch_factor: 4
+  num_images: 10554521
 train:
   epochs: 2
-  batch_size: 256
+  batch_size: 240
   base_unet_max_batch_size: 12
   sr_unet1_max_batch_size: 2
   load_checkpoint: False

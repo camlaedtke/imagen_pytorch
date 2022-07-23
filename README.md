@@ -1,17 +1,21 @@
 # imagen_pytorch
 
-Training pipeline for Imagen, Google's Text-to-Image Neural Network, on the Conceptual 12M dataset. Using @lucidrains excellent [repo](https://github.com/lucidrains/imagen-pytorch). 
+Training pipeline for Imagen, Google's Text-to-Image Neural Network, on the Conceptual 12M dataset. Using Phil Wang's excellent [repo](https://github.com/lucidrains/imagen-pytorch). 
 
 Training runs are logged in Wandb: https://wandb.ai/camlaedtke/imagen?workspace=user-camlaedtke
  
 
 #### Conceptual 12M
-- Downloaded with [img2dataset](https://github.com/rom1504/img2dataset/blob/main/dataset_examples/cc12m.md)
 
-`curl.exe --output cc12m.tsv --url https://storage.googleapis.com/conceptual_12m/cc12m.tsv`
+Downloaded with [img2dataset](https://github.com/rom1504/img2dataset/blob/main/dataset_examples/cc12m.md)
 
-`sed -i "1s/^/url\tcaption\n/" cc12m.tsv`
-
+On Windows ...
+```bash
+curl.exe --output cc12m.tsv --url https://storage.googleapis.com/conceptual_12m/cc12m.tsv
+```
+```bash
+sed -i "1s/^/url\tcaption\n/" cc12m.tsv
+```
 ```bash
 img2dataset --url_list cc12m.tsv --input_format "tsv"\
          --url_col "url" --caption_col "caption" --output_format webdataset\
@@ -21,6 +25,6 @@ img2dataset --url_list cc12m.tsv --input_format "tsv"\
 
 
 #### Some running notes
-- Batch size of 64-128 is good. 
+- Batch size of 64-256 is good. 
 - Setting `max_grad_norm = 1.25` makes training more stable, but appears to considerably slow convergence and hurt performance.
-- Best results have been attained with a learning rate of 1e-5. The larger the SR unet, the smaller the learning rate should be. And a smaller learning rate for the base unet may be needed for very large text embedding models like google/t5-v1_1-xl. 
+- Best results have been attained with a learning rate of around 1e-5.

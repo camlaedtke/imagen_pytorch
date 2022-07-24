@@ -1,20 +1,20 @@
 dataset:
   image_size: 256
-  shuffle_size: 4096
+  shuffle_size: 10000
   num_workers: 1
   prefetch_factor: 4
   num_images: 10554521
 train:
   epochs: 2
-  batch_size: 256 
+  batch_size: 512
   base_unet_max_batch_size: 32 
   sr_unet1_max_batch_size: 16 
-  load_checkpoint: False
+  load_checkpoint: True
   load_checkpoint_path: "./checkpoint/imagen_medium_checkpoint.pt"
-  checkpoint_rate: 500
+  checkpoint_rate: 1000
   checkpoint_path: "./checkpoint/imagen_medium_checkpoint.pt"
   use_ema: True
-  lr: 0.000015
+  lr: 0.00002
   eps: 0.00000001
   beta1: 0.9
   beta2: 0.99

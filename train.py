@@ -36,6 +36,15 @@ def pad_embeddings(batch):
     return [imgs, embeds]
     
     
+def format_images(display_list):
+    image_list = []
+    for i in range(len(display_list)):
+        img = display_list[i].cpu().permute(1,2,0).numpy() * 255
+        img = img.astype(np.uint8)
+        image_list.append(img)
+    return image_list
+    
+    
 def get_sample_images(cfg, trainer, i):
     texts = ['dog', 'cheeseburger', 'blue car', 'red flowers in a white vase',
                  'a puppy looking anxiously at a giant donut on the table', 'the milky way galaxy in the style of monet']
@@ -48,7 +57,7 @@ def get_sample_images(cfg, trainer, i):
     
 def train(cfg, dataloader, trainer, epoch, i, device):
     # cfg["dataset"]["num_images"]
-    n_batches = 3397838 // cfg["train"]["batch_size"]
+    n_batches = 3967588  // cfg["train"]["batch_size"]
     step_start = time()
     for step, batch in enumerate(dataloader): 
         curr_step = int(n_batches*(epoch-1) + step)
@@ -114,8 +123,7 @@ def train(cfg, dataloader, trainer, epoch, i, device):
             })
         print(f"\rTrain Step {step+1}/{n_batches} --- Loss: {loss:.4f} ", end='')
         step_start = time()
-
-    return trainer
+        
 
 
 def run_train_loop(cfg, trainer, dataloader, device, i=1):
@@ -123,9 +131,9 @@ def run_train_loop(cfg, trainer, dataloader, device, i=1):
         print(f"\nEpoch {epoch}/{cfg['train']['epochs']}")
         print(f"--- Unet {i} ---")
         start = time()
-        trainer = train(cfg, dataloader, trainer, epoch, i, device)
+        train(cfg, dataloader, trainer, epoch, i, device)
         end = time()
-        print(f"  Time: {(end-start)/60:.0f} min")
+        print(f"  Time: {(end-start)/3600:.2f} hours")
         
         
         
@@ -149,7 +157,7 @@ if __name__ == "__main__":
     
     
     cc_dataset = (
-        wds.WebDataset("file:E:/datasets/cc12m/{00000..00099}.tar") 
+        wds.WebDataset("file:E:/datasets/cc12m/{00000..00466}.tar") 
         .shuffle(cfg["dataset"]["shuffle_size"])
         .decode("pilrgb")
         .rename(image="png", embedding="emb.pyd")
@@ -163,7 +171,7 @@ if __name__ == "__main__":
         drop_last = True,
         num_workers = cfg["dataset"]["num_workers"],
         prefetch_factor = cfg["dataset"]["prefetch_factor"],
-        pin_memory = True,
+        pin_memory = False,
         collate_fn = pad_embeddings
     )
     
@@ -221,11 +229,7 @@ if __name__ == "__main__":
     # torch.backends.cudnn.benchmark = True
     
     if cfg["train"]["load_checkpoint"]:
-        try:
-            trainer.load(cfg["train"]["load_checkpoint_path"], strict=False, only_model=False)
-            print("Loaded checkpoint")
-        except: 
-            pass
-    
+        trainer.load(cfg["train"]["load_checkpoint_path"], strict=False, only_model=False, noop_if_not_exist=True)
+
     run_train_loop(cfg, trainer, cc_dataloader, device, i=UNET_NUMBER)
     

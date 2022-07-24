@@ -64,33 +64,32 @@ def train(cfg, dataloader, trainer, epoch, i, device):
         
         fetch_start = time()
         images, text_embeds = batch
-        images = torch.stack(images, dim=0)
-        images = images.to(device)
+        images = torch.stack(images, dim=0).to(device, non_blocking=cfg["train"]["non_blocking"])
         fetch_end = time()
-        fetch_time = fetch_end-fetch_start
-       
+        
         embed_start = time()
-        text_embeds = text_embeds.to(device)
+        text_embeds = text_embeds.to(device, non_blocking=cfg["train"]["non_blocking"])
         embed_end = time()
-        embed_time = embed_end-embed_start
-       
+        
         loss_start = time()
         loss = trainer(
             images, 
             text_embeds = text_embeds, 
             unet_number = i, 
-            max_batch_size = cfg["train"]["base_unet_max_batch_size"] if i == 1 else cfg["train"]["sr_unet1_max_batch_size"]
+            max_batch_size = cfg["train"]["unet1_max_batch_size"] if i == 1 else cfg["train"]["unet2_max_batch_size"]
         )
         loss_end = time()
-        loss_time = loss_end-loss_start
-        
         
         update_start = time()
         trainer.update(unet_number = i)
         update_end = time()
-        update_time = update_end-update_start
         
         step_end = time()
+        
+        fetch_time = fetch_end-fetch_start
+        embed_time = embed_end-embed_start
+        loss_time = loss_end-loss_start
+        update_time = update_end-update_start
         step_time = step_end-step_start
         
         dead_time = step_time - fetch_time - embed_time - loss_time - update_time
@@ -139,7 +138,7 @@ def run_train_loop(cfg, trainer, dataloader, device, i=1):
         
 if __name__ == "__main__":
     
-    cfg = yaml.safe_load(Path("configs\\imagen-medium-config.yaml").read_text())
+    cfg = yaml.safe_load(Path("configs\\imagen-small-config.yaml").read_text())
     cfg_flat = dict(FlatDict(cfg, delimiter='.'))
     
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -157,7 +156,7 @@ if __name__ == "__main__":
     
     
     cc_dataset = (
-        wds.WebDataset("file:E:/datasets/cc12m/{00000..00466}.tar") 
+        wds.WebDataset(cfg["dataset"]["dataset_path"]) 
         .shuffle(cfg["dataset"]["shuffle_size"])
         .decode("pilrgb")
         .rename(image="png", embedding="emb.pyd")
@@ -168,44 +167,44 @@ if __name__ == "__main__":
     cc_dataloader = DataLoader(
         dataset = cc_dataset, 
         batch_size = cfg["train"]["batch_size"], 
-        drop_last = True,
+        drop_last = cfg["dataset"]["drop_last"],
         num_workers = cfg["dataset"]["num_workers"],
         prefetch_factor = cfg["dataset"]["prefetch_factor"],
-        pin_memory = False,
+        pin_memory = cfg["dataset"]["pin_memory"],
         collate_fn = pad_embeddings
     )
     
     
     ##### MODEL #####
-    BaseUnet = Unet(
-        dim = cfg["model"]["base_unet"]["dim"],
-        cond_dim = cfg["model"]["base_unet"]["cond_dim"],
-        dim_mults = cfg["model"]["base_unet"]['dim_mults'], 
-        num_resnet_blocks = cfg["model"]["base_unet"]["num_resnet_blocks"],
-        layer_attns = cfg["model"]["base_unet"]['layer_attns'], 
-        layer_cross_attns = cfg["model"]["base_unet"]['layer_cross_attns'], 
-        attn_heads = cfg["model"]["base_unet"]["attn_heads"],
-        ff_mult = cfg["model"]["base_unet"]["ff_mult"],
-        memory_efficient = cfg["model"]["base_unet"]["memory_efficient"],
-        dropout = cfg["model"]["base_unet"]["dropout"]
+    unet1 = Unet(
+        dim = cfg["model"]["unet1"]["dim"],
+        cond_dim = cfg["model"]["unet1"]["cond_dim"],
+        dim_mults = cfg["model"]["unet1"]['dim_mults'], 
+        num_resnet_blocks = cfg["model"]["unet1"]["num_resnet_blocks"],
+        layer_attns = cfg["model"]["unet1"]['layer_attns'], 
+        layer_cross_attns = cfg["model"]["unet1"]['layer_cross_attns'], 
+        attn_heads = cfg["model"]["unet1"]["attn_heads"],
+        ff_mult = cfg["model"]["unet1"]["ff_mult"],
+        memory_efficient = cfg["model"]["unet1"]["memory_efficient"],
+        dropout = cfg["model"]["unet1"]["dropout"]
     )
 
 
-    SRUnet = Unet(
-        dim = cfg["model"]["sr_unet1"]["dim"],
-        cond_dim = cfg["model"]["sr_unet1"]["cond_dim"],
-        dim_mults = cfg["model"]["sr_unet1"]["dim_mults"], 
-        num_resnet_blocks = cfg["model"]["sr_unet1"]["num_resnet_blocks"], 
-        layer_attns = cfg["model"]["sr_unet1"]["layer_attns"],
-        layer_cross_attns = cfg["model"]["sr_unet1"]["layer_cross_attns"], 
-        attn_heads = cfg["model"]["sr_unet1"]["attn_heads"],
-        ff_mult = cfg["model"]["sr_unet1"]["ff_mult"],
-        memory_efficient = cfg["model"]["sr_unet1"]["memory_efficient"],
-        dropout = cfg["model"]["sr_unet1"]["dropout"]
+    unet2 = Unet(
+        dim = cfg["model"]["unet2"]["dim"],
+        cond_dim = cfg["model"]["unet2"]["cond_dim"],
+        dim_mults = cfg["model"]["unet2"]["dim_mults"], 
+        num_resnet_blocks = cfg["model"]["unet2"]["num_resnet_blocks"], 
+        layer_attns = cfg["model"]["unet2"]["layer_attns"],
+        layer_cross_attns = cfg["model"]["unet2"]["layer_cross_attns"], 
+        attn_heads = cfg["model"]["unet2"]["attn_heads"],
+        ff_mult = cfg["model"]["unet2"]["ff_mult"],
+        memory_efficient = cfg["model"]["unet2"]["memory_efficient"],
+        dropout = cfg["model"]["unet2"]["dropout"]
     )
 
     imagen = Imagen(
-        unets = (BaseUnet, SRUnet),
+        unets = (unet1, unet2),
         text_encoder_name = cfg["model"]["text_encoder_name"], 
         image_sizes = cfg["model"]["image_sizes"], 
         cond_drop_prob = cfg["model"]["cond_drop_prob"],
@@ -224,12 +223,19 @@ if __name__ == "__main__":
         cosine_decay_max_steps = eval(cfg["train"]["cosine_decay_max_steps"]),
         only_train_unet_number = UNET_NUMBER
     )
+    
 
     ##### TRAINING #####
     # torch.backends.cudnn.benchmark = True
     
     if cfg["train"]["load_checkpoint"]:
-        trainer.load(cfg["train"]["load_checkpoint_path"], strict=False, only_model=False, noop_if_not_exist=True)
+        trainer.load(
+            cfg["train"]["load_checkpoint_path"], 
+            strict=cfg["train"]["checkpoint_strict"], 
+            only_model=cfg["train"]["checkpoint_model_only"],
+            noop_if_not_exist=True
+        )
+        
 
     run_train_loop(cfg, trainer, cc_dataloader, device, i=UNET_NUMBER)
     

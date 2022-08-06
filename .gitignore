@@ -135,6 +135,8 @@ cc12m/
 wandb/
 checkpoint/
 utils/
+old/
+cc12m_original/
 .DS_Store
 cc3m.tsv
 cc12m.tsv

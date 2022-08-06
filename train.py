@@ -18,6 +18,14 @@ import webdataset as wds
 warnings.filterwarnings("ignore")
 
 
+def get_emb_tensor(cfg, texts, device):
+    text_embeds = t5_encode_text(texts, name=cfg["model"]["text_encoder_name"], return_attn_mask=False)
+    if cfg["train"]["embedding_non_blocking"]:
+        return text_embeds.to(device, non_blocking=True)
+    else:
+        return text_embeds
+
+
 def pad_tensor(sequences):
     num = len(sequences)
     max_len = max([s.size(1) for s in sequences])
@@ -46,29 +54,32 @@ def format_images(display_list):
     
     
 def get_sample_images(cfg, trainer, i):
-    texts = ['dog', 'cheeseburger', 'blue car', 'red flowers in a white vase',
-                 'a puppy looking anxiously at a giant donut on the table', 'the milky way galaxy in the style of monet']
+    texts = cfg["train"]["sample_texts"]
     sampled_images = trainer.sample(texts, cond_scale = cfg["train"]["cond_scale"], stop_at_unet_number=i)
     image_list = format_images(sampled_images)
     images_pil = [Image.fromarray(image) for image in image_list]
     return images_pil, texts
     
     
-    
 def train(cfg, dataloader, trainer, epoch, i, device):
-    # cfg["dataset"]["num_images"]
-    n_batches = 3967588  // cfg["train"]["batch_size"]
+    n_batches = cfg["dataset"]["num_images"] // cfg["train"]["batch_size"]
     step_start = time()
     for step, batch in enumerate(dataloader): 
         curr_step = int(n_batches*(epoch-1) + step)
         
         fetch_start = time()
-        images, text_embeds = batch
-        images = torch.stack(images, dim=0).to(device, non_blocking=cfg["train"]["non_blocking"])
+        images, texts = batch
+        if cfg["dataset"]["precomputed_embeddings"]:
+            images = torch.stack(images, dim=0).to(device, non_blocking=cfg["train"]["image_non_blocking"])
+        else:
+            images = images.to(device, non_blocking=cfg["train"]["image_non_blocking"])
         fetch_end = time()
         
         embed_start = time()
-        text_embeds = text_embeds.to(device, non_blocking=cfg["train"]["non_blocking"])
+        if cfg["dataset"]["precomputed_embeddings"]:
+            text_embeds = texts.to(device, non_blocking=cfg["train"]["embedding_non_blocking"])
+        else:
+            text_embeds = get_emb_tensor(cfg, texts, device)
         embed_end = time()
         
         loss_start = time()
@@ -124,7 +135,6 @@ def train(cfg, dataloader, trainer, epoch, i, device):
         step_start = time()
         
 
-
 def run_train_loop(cfg, trainer, dataloader, device, i=1):
     for epoch in range(1, cfg["train"]["epochs"]+1):
         print(f"\nEpoch {epoch}/{cfg['train']['epochs']}")
@@ -132,10 +142,9 @@ def run_train_loop(cfg, trainer, dataloader, device, i=1):
         start = time()
         train(cfg, dataloader, trainer, epoch, i, device)
         end = time()
-        print(f"  Time: {(end-start)/3600:.2f} hours")
+        print(f"  \n\nTime: {(end-start)/3600:.2f} hours")
         
-        
-        
+          
 if __name__ == "__main__":
     
     cfg = yaml.safe_load(Path("configs\\imagen-small-config.yaml").read_text())
@@ -143,7 +152,8 @@ if __name__ == "__main__":
     
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     print(device)
-    
+
+    # wandb.init(project="imagen", entity="camlaedtke", config=cfg_flat, resume=True, id="ovh1a8wt")
     wandb.init(project="imagen", entity="camlaedtke", config=cfg_flat)
     
     ##### INPUT PIPELINE #####    
@@ -154,25 +164,43 @@ if __name__ == "__main__":
         T.ToTensor()
     ])
     
-    
-    cc_dataset = (
-        wds.WebDataset(cfg["dataset"]["dataset_path"]) 
-        .shuffle(cfg["dataset"]["shuffle_size"])
-        .decode("pilrgb")
-        .rename(image="png", embedding="emb.pyd")
-        .map_dict(image=preproc)
-        .to_tuple("image", "embedding")
-    )
-    
-    cc_dataloader = DataLoader(
-        dataset = cc_dataset, 
-        batch_size = cfg["train"]["batch_size"], 
-        drop_last = cfg["dataset"]["drop_last"],
-        num_workers = cfg["dataset"]["num_workers"],
-        prefetch_factor = cfg["dataset"]["prefetch_factor"],
-        pin_memory = cfg["dataset"]["pin_memory"],
-        collate_fn = pad_embeddings
-    )
+    if cfg["dataset"]["precomputed_embeddings"]:
+        dataset = (
+            wds.WebDataset(cfg["dataset"]["dataset_path"], shardshuffle=cfg["dataset"]["shard_shuffle"]) 
+            .shuffle(cfg["dataset"]["shuffle_size"], initial=cfg["dataset"]["shuffle_initial"])
+            .decode("pilrgb")
+            .rename(image="png", embedding="emb.pyd")
+            .map_dict(image=preproc)
+            .to_tuple("image", "embedding")
+        )
+
+        loader = DataLoader(
+            dataset = dataset, 
+            batch_size = cfg["train"]["batch_size"], 
+            drop_last = cfg["dataset"]["drop_last"],
+            num_workers = cfg["dataset"]["num_workers"],
+            prefetch_factor = cfg["dataset"]["prefetch_factor"],
+            pin_memory = cfg["dataset"]["pin_memory"],
+            collate_fn = pad_embeddings
+        )
+    else:
+        dataset = (
+            wds.WebDataset(cfg["dataset"]["dataset_path"], shardshuffle=True)
+            .shuffle(cfg["dataset"]["shuffle_size"])
+            .decode("pilrgb")
+            .rename(image="jpg;png", caption="txt")
+            .map_dict(image=preproc)
+            .to_tuple("image", "caption")
+        )
+        loader = DataLoader(
+            dataset = dataset, 
+            batch_size = cfg["train"]["batch_size"], 
+            drop_last = cfg["dataset"]["drop_last"],
+            num_workers = cfg["dataset"]["num_workers"],
+            prefetch_factor = cfg["dataset"]["prefetch_factor"],
+            pin_memory = cfg["dataset"]["pin_memory"],
+        )
+        
     
     
     ##### MODEL #####
@@ -186,9 +214,10 @@ if __name__ == "__main__":
         attn_heads = cfg["model"]["unet1"]["attn_heads"],
         ff_mult = cfg["model"]["unet1"]["ff_mult"],
         memory_efficient = cfg["model"]["unet1"]["memory_efficient"],
-        dropout = cfg["model"]["unet1"]["dropout"]
+        dropout = cfg["model"]["unet1"]["dropout"],
+        cosine_sim_attn = cfg["model"]["unet1"]["cosine_sim_attn"],
+        use_linear_attn = cfg["model"]["unet1"]["use_linear_attn"]
     )
-
 
     unet2 = Unet(
         dim = cfg["model"]["unet2"]["dim"],
@@ -200,7 +229,9 @@ if __name__ == "__main__":
         attn_heads = cfg["model"]["unet2"]["attn_heads"],
         ff_mult = cfg["model"]["unet2"]["ff_mult"],
         memory_efficient = cfg["model"]["unet2"]["memory_efficient"],
-        dropout = cfg["model"]["unet2"]["dropout"]
+        dropout = cfg["model"]["unet2"]["dropout"],
+        cosine_sim_attn = cfg["model"]["unet2"]["cosine_sim_attn"],
+        use_linear_attn = cfg["model"]["unet2"]["use_linear_attn"]
     )
 
     imagen = Imagen(
@@ -211,8 +242,6 @@ if __name__ == "__main__":
         timesteps = cfg["model"]["timesteps"],
     ).cuda()
     
-    UNET_NUMBER = 1
-    
     trainer = ImagenTrainer(
         imagen, 
         lr = cfg["train"]["lr"],
@@ -221,12 +250,13 @@ if __name__ == "__main__":
         max_grad_norm = eval(cfg["train"]["max_grad_norm"]),
         warmup_steps = eval(cfg["train"]["warmup_steps"]),
         cosine_decay_max_steps = eval(cfg["train"]["cosine_decay_max_steps"]),
-        only_train_unet_number = UNET_NUMBER
+        only_train_unet_number = cfg["train"]["unet_number"]
     )
     
 
     ##### TRAINING #####
-    # torch.backends.cudnn.benchmark = True
+    if cfg["train"]["cudnn_benchmark"]:
+        torch.backends.cudnn.benchmark = True
     
     if cfg["train"]["load_checkpoint"]:
         trainer.load(
@@ -236,6 +266,5 @@ if __name__ == "__main__":
             noop_if_not_exist=True
         )
         
-
-    run_train_loop(cfg, trainer, cc_dataloader, device, i=UNET_NUMBER)
+    run_train_loop(cfg, trainer, loader, device, i=cfg["train"]["unet_number"])
     

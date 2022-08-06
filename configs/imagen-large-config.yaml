@@ -2,23 +2,25 @@ dataset:
   dataset_name: "cc12m"
   dataset_path: "file:E:/datasets/cc12m/{00000..00466}.tar"
   image_size: 256
-  shuffle_size: 10000
+  shuffle_size: 1500
   num_images: 10554521
-  num_workers: 1
-  prefetch_factor: 2
+  num_workers: 6
+  prefetch_factor: 1
   pin_memory: True
   drop_last: True
 train:
-  epochs: 2
-  batch_size: 240
-  unet1_max_batch_size: 12
+  epochs: 5
+  batch_size: 256
+  unet_number: 1
+  unet1_max_batch_size: 4
   unet2_max_batch_size: 2
   load_checkpoint: False
-  load_checkpoint_path: "./checkpoint/imagen_xl_checkpoint.pt"
+  load_checkpoint_path: "./checkpoint/imagen_large_checkpoint.pt"
   checkpoint_rate: 1000
-  checkpoint_path: "./checkpoint/imagen_xl_checkpoint.pt"
+  checkpoint_path: "./checkpoint/imagen_large_checkpoint.pt"
   checkpoint_strict: False
   checkpoint_model_only: False
+  non_blocking: True
   use_ema: True
   lr: 0.000015
   eps: 0.00000001
@@ -30,6 +32,7 @@ train:
   warmup_steps: None
   cosine_decay_max_steps: None
   cond_scale: 5
+  sample_texts: ['dog', 'cheeseburger', 'blue car', 'red flowers in a white vase', 'a puppy looking anxiously at a giant donut on the table', 'the milky way galaxy in the style of monet']
 model:
   text_encoder_name: "google/t5-v1_1-xl"
   image_sizes: [64, 256]

@@ -1,25 +1,31 @@
 dataset:
   dataset_name: "cc12m"
-  dataset_path: "file:E:/datasets/cc12m/{00000..00466}.tar"
+  dataset_path: "file:E:/datasets/cc12m_w_embeds/{00000..00818}.tar" 
   image_size: 256
-  shuffle_size: 1500
-  num_images: 10554521
-  num_workers: 6
+  shuffle_size: 100000
+  shuffle_initial: 2500
+  shard_shuffle: True
+  num_images: 6949806
+  num_workers: 4
   prefetch_factor: 1
   pin_memory: True
   drop_last: True
+  precomputed_embeddings: True
 train:
-  epochs: 2
+  epochs: 5
   batch_size: 256
-  unet1_max_batch_size: 32 
-  unet2_max_batch_size: 16 
+  unet_number: 1
+  unet1_max_batch_size: 32
+  unet2_max_batch_size: 16
   load_checkpoint: False
-  load_checkpoint_path: "./checkpoint/imagen_medium_checkpoint.pt"
+  load_checkpoint_path: "./checkpoint/imagen_small_checkpoint.pt"
   checkpoint_rate: 1000
-  checkpoint_path: "./checkpoint/imagen_medium_checkpoint.pt"
-  checkpoint_strict: False
+  checkpoint_path: "./checkpoint/imagen_small_checkpoint.pt"
+  checkpoint_strict: True
   checkpoint_model_only: False
-  non_blocking: True
+  image_non_blocking: True
+  embedding_non_blocking: False
+  cudnn_benchmark: True
   use_ema: True
   lr: 0.000015
   eps: 0.00000001
@@ -31,6 +37,7 @@ train:
   warmup_steps: None
   cosine_decay_max_steps: None
   cond_scale: 5
+  sample_texts: ['dog','cheeseburger','blue car','red flowers in a white vase','a puppy looking anxiously at a giant donut on the table', 'lizard running across the desert on two feet']
 model:
   text_encoder_name: "google/t5-v1_1-xl"
   image_sizes: [64, 256]
@@ -45,8 +52,10 @@ model:
     layer_cross_attns: [False, True, True, True]
     attn_heads: 8
     ff_mult: 2
-    memory_efficient: False
     dropout: 0.1
+    memory_efficient: False
+    cosine_sim_attn: False
+    use_linear_attn: False
   unet2:
     dim: 64
     cond_dim: 512
@@ -56,5 +65,7 @@ model:
     layer_cross_attns: [False, False, False, True]
     attn_heads: 8
     ff_mult: 2
-    memory_efficient: True
     dropout: 0.1
+    memory_efficient: True
+    cosine_sim_attn: False
+    use_linear_attn: False

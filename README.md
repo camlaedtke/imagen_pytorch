@@ -25,6 +25,6 @@ img2dataset --url_list cc12m.tsv --input_format "tsv"\
 
 
 #### Some running notes
-- Batch size of 64-256 is good. 
+- Batch size of 64-512 seems to be good.
 - Setting `max_grad_norm = 1.25` makes training more stable, but appears to considerably slow convergence and hurt performance.
-- Best results have been attained with a learning rate of around 1e-5.
+- Best results have been attained with a learning rate of around 1.5e-5 when combined with batch size of 256.

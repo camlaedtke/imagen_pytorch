@@ -153,8 +153,8 @@ if __name__ == "__main__":
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     print(device)
 
-    # wandb.init(project="imagen", entity="camlaedtke", config=cfg_flat, resume=True, id="ovh1a8wt")
-    wandb.init(project="imagen", entity="camlaedtke", config=cfg_flat)
+    wandb.init(project="imagen", entity="camlaedtke", config=cfg_flat, resume=True, id="2ja6akkc")
+    # wandb.init(project="imagen", entity="camlaedtke", config=cfg_flat)
     
     ##### INPUT PIPELINE #####    
     preproc = T.Compose([

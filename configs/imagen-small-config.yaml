@@ -1,33 +1,33 @@
 dataset:
   dataset_name: "cc12m"
-  dataset_path: "file:E:/datasets/cc12m_w_embeds/{00000..00818}.tar" 
+  dataset_path: "file:E:/datasets/cc12m_w_embeds/{00000..01242}.tar" 
   image_size: 256
-  shuffle_size: 100000
-  shuffle_initial: 2500
+  shuffle_size: 20000
+  shuffle_initial: 10000
   shard_shuffle: True
-  num_images: 6949806
-  num_workers: 4
+  num_images: 10554521
+  num_workers: 1
   prefetch_factor: 1
   pin_memory: True
   drop_last: True
   precomputed_embeddings: True
 train:
-  epochs: 5
-  batch_size: 256
-  unet_number: 1
-  unet1_max_batch_size: 32
-  unet2_max_batch_size: 16
-  load_checkpoint: False
+  epochs: 1
+  batch_size: 120
+  unet_number: 2
+  unet1_max_batch_size: 24
+  unet2_max_batch_size: 12
+  load_checkpoint: True
   load_checkpoint_path: "./checkpoint/imagen_small_checkpoint.pt"
-  checkpoint_rate: 1000
   checkpoint_path: "./checkpoint/imagen_small_checkpoint.pt"
+  checkpoint_rate: 2000
   checkpoint_strict: True
   checkpoint_model_only: False
   image_non_blocking: True
   embedding_non_blocking: False
   cudnn_benchmark: True
   use_ema: True
-  lr: 0.000015
+  lr: 0.00003
   eps: 0.00000001
   beta1: 0.9
   beta2: 0.99

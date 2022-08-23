@@ -21,8 +21,8 @@ train:
   load_checkpoint_path: "./checkpoint/imagen_small_checkpoint.pt"
   checkpoint_path: "./checkpoint/imagen_small_checkpoint.pt"
   checkpoint_rate: 2000
-  checkpoint_strict: True
-  checkpoint_model_only: False
+  checkpoint_strict: False
+  checkpoint_model_only: True
   image_non_blocking: True
   embedding_non_blocking: False
   cudnn_benchmark: True
